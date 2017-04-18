@@ -7,7 +7,7 @@ $(function() {
         var type = 'binge';
 
         // Filter data down
-        var data = allData.filter(function(d) {
+        /*var data = allData.filter(function(d) {
                 return d.type == type && d.sex == sex
             })
             // Sort the data alphabetically
@@ -16,7 +16,7 @@ $(function() {
                 if (a.state_name < b.state_name) return -1;
                 if (a.state_name > b.state_name) return 1;
                 return 0;
-            });
+            });*/
 
         // Margin: how much space to put in the SVG for axes/titles
         var margin = {
@@ -81,17 +81,17 @@ $(function() {
 
 
         // Get the unique values of states for the domain of your x scale
-        var states = data.map(function(d) {
+        /*var states = data.map(function(d) {
             return d.state;
-        });
+        });*/
 
         // Set the domain/range of your xScale
-        xScale.range([0, drawWidth])
+        /*xScale.range([0, drawWidth])
             .padding(0.1)
-            .domain(states);
+            .domain(states);*/
 
         // Get min/max values of the percent data (for your yScale domain)
-        var yMin = d3.min(data, function(d) {
+        /*var yMin = d3.min(data, function(d) {
             return +d.percent;
         });
 
@@ -117,7 +117,7 @@ $(function() {
 
         // Update xAxisText and yAxisText labels
         xAxisText.text('State');
-        yAxisText.text('Percent Drinking (' + sex + ', ' + type + ')');
+        yAxisText.text('Percent Drinking (' + sex + ', ' + type + ')');*/
 
 
         // Add tip
@@ -128,7 +128,7 @@ $(function() {
 
         // Store the data-join in a function: make sure to set the scales and update the axes in your function.
         // Select all rects and bind data
-        var bars = g.selectAll('rect').data(data);
+        /*var bars = g.selectAll('rect').data(data);
 
         // Use the .enter() method to get your entering elements, and assign initial positions
         bars.enter().append('rect')
@@ -144,6 +144,89 @@ $(function() {
             })
             .attr('height', function(d) {
                 return drawHeight - yScale(d.percent);
+            });*/
+
+        var setScales = function(data) {
+            var states = data.map(function(d) {
+                return d.state;
             });
+
+            xScale.range([0, drawWidth])
+            .padding(0.1)
+            .domain(states);
+
+            var yMin = d3.min(data, function(d) {
+                return +d.percent;
+            });
+
+            var yMax = d3.max(data, function(d) {
+                return +d.percent;
+            });
+
+            yScale.range([drawHeight, 0])
+            .domain([0, yMax]);
+        };
+
+        var setAxes = function() {
+            xAxis.scale(xScale);
+            yAxis.scale(yScale);
+            xAxisLabel.call(xAxis);
+            yAxisLabel.call(yAxis);
+            xAxisText.text('State');
+            yAxisText.text('Percent Drinking (' + sex + ', ' + type + ')');
+        };
+
+        var filterData = function() {
+            var currentData = allData.filter(function(d) {
+                return d.type == type && d.sex == sex
+            })
+            // Sort the data alphabetically
+            // Hint: http://stackoverflow.com/questions/6712034/sort-array-by-firstname-alphabetically-in-javascript
+            .sort(function(a, b) {
+                if (a.state_name < b.state_name) return -1;
+                if (a.state_name > b.state_name) return 1;
+                return 0;
+            });
+            return currentData;
+        };
+
+        var draw = function(data) {
+            //var filteredData = filterData(data);
+
+            setScales(filteredData);
+
+            setAxes(filteredData);
+
+            var bars = g.selectAll('rect').data(data);
+
+            // Use the .enter() method to get your entering elements, and assign initial positions
+            bars.enter().append('rect')
+                .attr('x', function(d) {
+                    return xScale(d.state);
+                })
+                .attr('class', 'bar')
+                .on('mouseover', tip.show)
+                .on('mouseout', tip.hide)
+                .attr('width', xScale.bandwidth())
+                .attr('y', function(d) {
+                    return yScale(d.percent);
+                })
+                .attr('height', function(d) {
+                    return drawHeight - yScale(d.percent);
+                });
+            bars.exit().remove();
+        };
+
+        $("input").on('change', function() {
+            // Get value, determine if it is the sex or type controller
+            var val = $(this).val();
+            var isSex = $(this).hasClass('sex');
+            if (isSex) sex = val;
+            else type = val;
+
+            // Filter data, update chart
+            var currentData = filterData();
+            draw(currentData);
+        });
     });
 });
